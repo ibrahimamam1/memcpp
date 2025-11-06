@@ -11,7 +11,7 @@ mem_block_t* head = nullptr;
 
 void init_mem_pool() {
     head = (mem_block_t*) sbrk(STARTING_SIZE);
-    head->size = STARTING_SIZE - sizeof(mem_block_t);
+    head->size = INITIAL_BLOCK_SIZE;
     head->free = true;
     head->next = nullptr;
 }
@@ -51,4 +51,27 @@ void* mem_alloc(size_t size) {
     //Link the new block
     current->next = new_block;
     return (void*)(new_block + MEM_BLOCK_SIZE);
+}
+
+void mem_free(void* ptr) {
+    if(ptr == nullptr) return;
+    mem_block_t* block = (mem_block_t*)((char*)ptr - MEM_BLOCK_SIZE);
+    block->free = true;
+
+    //Coalesce adjacent free blocks
+    if(block->next != nullptr && block->next->free) {
+        block->size += MEM_BLOCK_SIZE + block->next->size;
+        block->next = block->next->next;
+    }
+    mem_block_t* current = head;
+    while(current->next != nullptr) {
+        if(current->next == block){
+            if(current->free) {
+                current->size += MEM_BLOCK_SIZE + block->size;
+                current->next = block->next;
+            }
+            break;
+        }
+        current = current->next;
+    }
 }
