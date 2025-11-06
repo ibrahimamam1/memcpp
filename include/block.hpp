@@ -2,10 +2,9 @@
 #include <cstddef>
 
 typedef struct mem_block{
-    size_t size;
     bool free;
-    struct mem_block* next;
-    void* address;
+    size_t size;
+    struct mem_block* next = nullptr;
 }mem_block_t;
 
-#define BLOCK_SIZE sizeof(mem_block_t)
+#define MEM_BLOCK_SIZE sizeof(mem_block_t)

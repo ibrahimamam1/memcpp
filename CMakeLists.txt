@@ -6,5 +6,5 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 #for google tests
 enable_testing()
-find_package(GTEST REQUIRED)
+#find_package(GTEST REQUIRED)
 include_directories(${GTEST_INCLUDE_DIRS})
