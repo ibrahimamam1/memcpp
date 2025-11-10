@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Site BuildName="(empty)"
+	BuildStamp="20251109-2356-Experimental"
+	Name="(empty)"
+	Generator="ctest-4.1.2"
+	CompilerName=""
+	CompilerVersion=""
+	OSName="Linux"
+	Hostname="Atom"
+	OSRelease="6.16.8-arch3-1"
+	OSVersion="#1 SMP PREEMPT_DYNAMIC Mon, 22 Sep 2025 22:08:35 +0000"
+	OSPlatform="x86_64"
+	Is64Bits="1"
+	VendorString="GenuineIntel"
+	VendorID="Intel Corporation"
+	FamilyID="6"
+	ModelID="191"
+	ModelName="Intel(R) Core(TM) i3-14100"
+	ProcessorCacheSize="12288"
+	NumberOfLogicalCPU="8"
+	NumberOfPhysicalCPU="4"
+	TotalVirtualMemory="3814"
+	TotalPhysicalMemory="23809"
+	LogicalProcessorsPerPhysical="2"
+	ProcessorClockFrequency="1290.48"
+	>
+	<Testing>
+		<StartDateTime>Nov 10 05:56 +06</StartDateTime>
+		<StartTestTime>1762732586</StartTestTime>
+		<TestList/>
+		<EndDateTime>Nov 10 05:56 +06</EndDateTime>
+		<EndTestTime>1762732586</EndTestTime>
+		<ElapsedMinutes>0</ElapsedMinutes>
+	</Testing>
+</Site>

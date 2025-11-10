@@ -1,0 +1,4 @@
+# ninja log v6
+0	795	1762421344502283093	CMakeFiles/runTests.dir/test/alloc_test.cpp.o	aa2d15bb168b8e55
+1	294	1762421344503283116	CMakeFiles/runTests.dir/alloc.cpp.o	c4d2468fa9ff1cd1
+795	836	1762421345297300989	runTests	790837bbf604de5a

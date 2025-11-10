@@ -6,5 +6,15 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 #for google tests
 enable_testing()
-#find_package(GTEST REQUIRED)
+find_package(GTest REQUIRED)
 include_directories(${GTEST_INCLUDE_DIRS})
+
+add_executable(runTests
+test/alloc_test.cpp
+alloc.cpp
+)
+target_link_libraries(runTests
+GTest::GTest
+GTest::Main
+pthread
+)

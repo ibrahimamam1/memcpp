@@ -3,32 +3,49 @@
 #include <cstddef>
 #include <unistd.h>
 #include <memory>
+#include <mutex>
 
 #define INITIAL_BLOCK_SIZE  1024
 #define STARTING_SIZE INITIAL_BLOCK_SIZE+MEM_BLOCK_SIZE
 
 mem_block_t* head = nullptr;
+std::mutex alloc_mutex;
 
 void init_mem_pool() {
+    std::lock_guard<std::mutex> lock(alloc_mutex);
     head = (mem_block_t*) sbrk(STARTING_SIZE);
     head->size = INITIAL_BLOCK_SIZE;
     head->free = true;
     head->next = nullptr;
 }
 
+void* mem_alloc_align(size_t size, Alignment alignment){
+    size_t aligned_size = align_size(size, alignment);
+    return mem_alloc(aligned_size);
+}
+
+void* mem_alloc_align_type(size_t size, AlignmentForType type_alignment){
+    size_t aligned_size = align_size(size, type_alignment);
+    return mem_alloc(aligned_size);
+}
+
 void* mem_alloc(size_t size) {
+    std::lock_guard<std::mutex> lock(alloc_mutex);
+    size = align_size(size, ALIGN_NATURAL);
+    
     if(head == nullptr) {
         init_mem_pool();
     }
     mem_block_t* current = head;
-    do{
+    mem_block_t* prev = nullptr;
+    while(current != nullptr){
        if(current->free && current->size == size){
             //Found a suitable block
             current->free = false;
-            return (void*)(current + MEM_BLOCK_SIZE);
+            return (void*)(current + 1);
        }else if(current->free && current->size > size){
             //Found a larger block, split it
-            mem_block_t* new_block = (mem_block_t*)((char*)(current + MEM_BLOCK_SIZE) + size);
+            mem_block_t* new_block = (mem_block_t*)((char*)(current + 1) + size);
             new_block->free = true;
             new_block->size = current->size - size - MEM_BLOCK_SIZE;
             new_block->next = current->next;
@@ -37,10 +54,11 @@ void* mem_alloc(size_t size) {
             current->free = false;
             current->size = size;
             current->next = new_block;
-            return (void*)(current + MEM_BLOCK_SIZE); 
+            return (void*)(current + 1); 
        }
-       current = current->next; 
-    }while(current->next != nullptr);
+       prev = current; 
+       current = current->next;
+    };
 
     //No suitable block found, request more memory
     mem_block_t* new_block = (mem_block_t*) sbrk(size + MEM_BLOCK_SIZE);
@@ -49,13 +67,18 @@ void* mem_alloc(size_t size) {
     new_block->next = nullptr;
     
     //Link the new block
-    current->next = new_block;
-    return (void*)(new_block + MEM_BLOCK_SIZE);
+    if (prev != nullptr) {
+        prev->next = new_block;
+    } else {
+        head = new_block;  // This would be the first block
+    }
+    return (void*)(new_block + 1);
 }
 
 void mem_free(void* ptr) {
+    std::lock_guard<std::mutex> lock(alloc_mutex);
     if(ptr == nullptr) return;
-    mem_block_t* block = (mem_block_t*)((char*)ptr - MEM_BLOCK_SIZE);
+    mem_block_t* block = (mem_block_t*)ptr - 1;
     block->free = true;
 
     //Coalesce adjacent free blocks
