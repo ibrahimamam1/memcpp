@@ -14,6 +14,10 @@ std::mutex alloc_mutex;
 void init_mem_pool() {
     std::lock_guard<std::mutex> lock(alloc_mutex);
     head = (mem_block_t*) sbrk(STARTING_SIZE);
+    if(head == (void*) -1) {
+        head = nullptr; // sbrk failed
+        return;
+    }
     head->size = INITIAL_BLOCK_SIZE;
     head->free = true;
     head->next = nullptr;
@@ -31,7 +35,6 @@ void* mem_alloc_align_type(size_t size, AlignmentForType type_alignment){
 
 void* mem_alloc(size_t size) {
     std::lock_guard<std::mutex> lock(alloc_mutex);
-    size = align_size(size, ALIGN_NATURAL);
     
     if(head == nullptr) {
         init_mem_pool();
@@ -44,7 +47,14 @@ void* mem_alloc(size_t size) {
             current->free = false;
             return (void*)(current + 1);
        }else if(current->free && current->size > size){
-            //Found a larger block, split it
+            size_t remaining_size = current->size - size;
+            if(remaining_size <= MEM_BLOCK_SIZE){
+                //Not enough space to split, allocate entire block
+                current->free = false;
+                return (void*)(current + 1);
+            }
+
+            //Large enough to split, split it
             mem_block_t* new_block = (mem_block_t*)((char*)(current + 1) + size);
             new_block->free = true;
             new_block->size = current->size - size - MEM_BLOCK_SIZE;
@@ -62,6 +72,9 @@ void* mem_alloc(size_t size) {
 
     //No suitable block found, request more memory
     mem_block_t* new_block = (mem_block_t*) sbrk(size + MEM_BLOCK_SIZE);
+    if(new_block == (void*) -1) {
+        return nullptr; //sbrk failed
+    }
     new_block->size = size;
     new_block->free = false;
     new_block->next = nullptr;
