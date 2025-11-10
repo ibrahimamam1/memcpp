@@ -1,4 +1,0 @@
-/home/rgb/Desktop/projects/memcpp/build/CMakeFiles/runTests.dir
-/home/rgb/Desktop/projects/memcpp/build/CMakeFiles/test.dir
-/home/rgb/Desktop/projects/memcpp/build/CMakeFiles/edit_cache.dir
-/home/rgb/Desktop/projects/memcpp/build/CMakeFiles/rebuild_cache.dir
