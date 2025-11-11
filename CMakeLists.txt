@@ -12,6 +12,7 @@ include_directories(${GTEST_INCLUDE_DIRS})
 add_executable(runTests
 test/alloc_test.cpp
 alloc.cpp
+alignment.cpp
 )
 target_link_libraries(runTests
 GTest::GTest
