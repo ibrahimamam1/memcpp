@@ -12,7 +12,6 @@ mem_block_t* head = nullptr;
 std::mutex alloc_mutex;
 
 void init_mem_pool() {
-    std::lock_guard<std::mutex> lock(alloc_mutex);
     head = (mem_block_t*) sbrk(STARTING_SIZE);
     if(head == (void*) -1) {
         head = nullptr; // sbrk failed
@@ -20,17 +19,28 @@ void init_mem_pool() {
     }
     head->size = INITIAL_BLOCK_SIZE;
     head->free = true;
+    head->is_aligned = false;
     head->next = nullptr;
 }
 
 void* mem_alloc_align(size_t size, Alignment alignment = Alignment::ALIGN_NATURAL){
-    size_t aligned_size = align_size(size, alignment);
-    return mem_alloc(aligned_size);
+    size_t aligned_size = align_size(size, alignment) + sizeof(void*);
+    
+    void* unaligned = mem_alloc(aligned_size);
+    if(unaligned == nullptr) return nullptr;
+
+    //calculate aligned address
+    uintptr_t raw_addr = reinterpret_cast<uintptr_t>(unaligned);
+    uintptr_t aligned_addr = (raw_addr + sizeof(void*) + aligned_size -1) & ~(aligned_size - 1);
+
+    void** block_ptr_location = reinterpret_cast<void**>(aligned_addr - sizeof(void*));
+    *block_ptr_location = unaligned;
+
+    return reinterpret_cast<void*>(aligned_addr);
 }
 
 void* mem_alloc_align_type(size_t size, AlignmentForType type_alignment){
-    size_t aligned_size = align_size(size, type_alignment);
-    return mem_alloc(aligned_size);
+    return mem_alloc_align(size, static_cast<Alignment>(type_alignment));
 }
 
 void* mem_alloc(size_t size){
@@ -58,11 +68,13 @@ void* mem_alloc(size_t size){
             mem_block_t* new_block = (mem_block_t*)((char*)(current + 1) + size);
             new_block->free = true;
             new_block->size = current->size - size - MEM_BLOCK_SIZE;
+            new_block->is_aligned = false;
             new_block->next = current->next;
 
             //update current block
             current->free = false;
             current->size = size;
+            current->is_aligned = false;
             current->next = new_block;
             return (void*)(current + 1); 
        }
@@ -77,6 +89,7 @@ void* mem_alloc(size_t size){
     }
     new_block->size = size;
     new_block->free = false;
+    new_block->is_aligned = false;
     new_block->next = nullptr;
     
     //Link the new block
@@ -91,7 +104,15 @@ void* mem_alloc(size_t size){
 void mem_free(void* ptr) {
     std::lock_guard<std::mutex> lock(alloc_mutex);
     if(ptr == nullptr) return;
+    
     mem_block_t* block = (mem_block_t*)ptr - 1;
+    void* actual_ptr = ptr;
+    
+    if(block->is_aligned) {
+        void** back_ptr = reinterpret_cast<void**>(ptr) - 1;
+        actual_ptr = *back_ptr;
+        block = (mem_block_t*)actual_ptr - 1;
+    }
     block->free = true;
 
     //Coalesce adjacent free blocks

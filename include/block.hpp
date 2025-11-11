@@ -4,6 +4,7 @@
 typedef struct mem_block{
     bool free;
     size_t size;
+    bool is_aligned;
     struct mem_block* next = nullptr;
 }mem_block_t;
 
