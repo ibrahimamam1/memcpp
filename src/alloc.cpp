@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <memory>
 #include <mutex>
+#include <cassert>
 
 #define INITIAL_BLOCK_SIZE  1024
 #define STARTING_SIZE INITIAL_BLOCK_SIZE+MEM_BLOCK_SIZE
@@ -24,16 +25,26 @@ void init_mem_pool() {
 }
 
 void* mem_alloc_align(size_t size, Alignment alignment = Alignment::ALIGN_NATURAL){
-    size_t aligned_size = align_size(size, alignment) + sizeof(void*);
-    
-    void* unaligned = mem_alloc(aligned_size);
-    if(unaligned == nullptr) return nullptr;
+    size_t align_val = static_cast<size_t>(alignment);
 
-    //calculate aligned address
+    //Ensure alignment is a power of 2
+    assert((align_val & (align_val-1)) == 0 && "alignment must be a power of 2");
+
+    //we need space for:
+    //1) the aligned block
+    //2) space to store the original unaligned pointer(we need it for free)
+    //3) Padding for alignment
+    size_t total_size = size + sizeof(void*) + align_val;
+
+    void* unaligned = mem_alloc(total_size);
+    if(!unaligned) return nullptr;
+
+    //compute alignment
     uintptr_t raw_addr = reinterpret_cast<uintptr_t>(unaligned);
-    uintptr_t aligned_addr = (raw_addr + sizeof(void*) + aligned_size -1) & ~(aligned_size - 1);
+    uintptr_t aligned_addr = (raw_addr + sizeof(void*) + align_val-1) & ~(align_val - 1);
 
-    void** block_ptr_location = reinterpret_cast<void**>(aligned_addr - sizeof(void*));
+    //store original ptr just before aligned block
+    void** block_ptr_location = reinterpret_cast<void**>(aligned_addr-sizeof(void*));
     *block_ptr_location = unaligned;
 
     return reinterpret_cast<void*>(aligned_addr);
