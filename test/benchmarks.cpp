@@ -11,7 +11,7 @@
 #include <string>
 #include <vector>
 
-void successive_allocations_with_free() {
+void successive_allocations(bool with_free = true) {
   size_t alloc_size = 64;
   size_t n_runs = 5000;
 
@@ -38,7 +38,7 @@ void successive_allocations_with_free() {
     auto end = std::chrono::high_resolution_clock::now();
 
     if (addr) {
-      mem_free(addr); // Free memory
+      if(with_free) mem_free(addr); // Free memory
       auto duration =
           std::chrono::duration_cast<std::chrono::microseconds>(end - start);
       memcpp_results.push_back(duration);
@@ -53,7 +53,7 @@ void successive_allocations_with_free() {
     auto end = std::chrono::high_resolution_clock::now();
 
     if (addr) {
-      free(addr); // Free memory
+      if(with_free) free(addr); // Free memory
       auto duration =
           std::chrono::duration_cast<std::chrono::microseconds>(end - start);
       malloc_results.push_back(duration);
@@ -68,7 +68,7 @@ void successive_allocations_with_free() {
     auto end = std::chrono::high_resolution_clock::now();
 
     if (addr) {
-      delete[] addr; // Fixed: use delete[] for array
+      if(with_free) delete[] addr; // Fixed: use delete[] for array
       auto duration =
           std::chrono::duration_cast<std::chrono::microseconds>(end - start);
       new_delete_results.push_back(duration);
@@ -158,8 +158,4 @@ void successive_allocations_with_free() {
   std::cout << "Comparison plot saved to: " << plot4_path << "\n";
 }
 
-void successive_allocations_without_free();
-void varying_alloc_sizes();
-void concurrency_benchmark();
-
-int main() { successive_allocations_with_free();}
+int main() { successive_allocations();}
