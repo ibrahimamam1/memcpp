@@ -4,6 +4,7 @@ project(memcpp VERSION 1.0.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Library target
 add_library(
     memcpp
     src/alloc.cpp
@@ -16,6 +17,7 @@ target_include_directories(
     $<INSTALL_INTERFACE:include>
 )
 
+# Installation rules
 install(
     TARGETS memcpp
     EXPORT MemcppTargets
@@ -29,7 +31,9 @@ install(
     DESTINATION include 
 )
 
+# Package configuration
 include(CMakePackageConfigHelpers)
+
 write_basic_package_version_file(
     "MemcppConfigVersion.cmake" 
     VERSION ${PROJECT_VERSION}
@@ -37,26 +41,27 @@ write_basic_package_version_file(
 )
 
 configure_package_config_file(
-    "cmake/memcppconfig.cmake.in"
+    "cmake/MemcppConfig.cmake.in"
     "MemcppConfig.cmake"
-    INSTALL_DESTINATION lib/cmake/Memcpp
+    INSTALL_DESTINATION lib/cmake/memcpp
 )
 
-install(FILES 
-    "${CMAKE_CURRENT_BINARY_DIR}/MemcppConfig.cmake"
-    "${CMAKE_CURRENT_BINARY_DIR}/MemcppConfigVersion.cmake"
+install(
+    FILES 
+        "${CMAKE_CURRENT_BINARY_DIR}/MemcppConfig.cmake"
+        "${CMAKE_CURRENT_BINARY_DIR}/MemcppConfigVersion.cmake"
     DESTINATION lib/cmake/memcpp
 )
 
-install(EXPORT MemcppTargets
+install(
+    EXPORT MemcppTargets
     NAMESPACE memcpp::
     DESTINATION lib/cmake/memcpp
 )
 
-#for google tests
+# Testing
 enable_testing()
 find_package(GTest REQUIRED)
-include_directories(${GTEST_INCLUDE_DIRS})
 
 add_executable(
     runTests
@@ -65,8 +70,12 @@ add_executable(
     src/alignment.cpp
 )
 
-target_link_libraries(runTests
-GTest::GTest
-GTest::Main
-pthread
+target_link_libraries(
+    runTests
+    GTest::GTest
+    GTest::Main
+    pthread
 )
+
+include(GoogleTest)
+gtest_discover_tests(runTests)
