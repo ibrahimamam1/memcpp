@@ -48,8 +48,8 @@ configure_package_config_file(
 
 install(
     FILES 
-        "${CMAKE_CURRENT_BINARY_DIR}/MemcppConfig.cmake"
-        "${CMAKE_CURRENT_BINARY_DIR}/MemcppConfigVersion.cmake"
+        "${CMAKE_CURRENT_BINARY_DIR}/memcppConfig.cmake"
+        "${CMAKE_CURRENT_BINARY_DIR}/memcppConfigVersion.cmake"
     DESTINATION lib/cmake/memcpp
 )
 
