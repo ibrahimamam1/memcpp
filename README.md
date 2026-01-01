@@ -1,7 +1,19 @@
 # memcpp
-small and lightweight c++ memory management library.
+lightweight c++ memory management library.
+
+## Features
+- Manages process internal address space.
+- Byte Alignment.
+- Large Allocations Support.
+- Coalescense of freed memory.
+- Lightweight and fast.
+- Intuitive API.
 
 ## How To Install
+### Prerequisites
+- cmake
+- ninja
+
 ```bash
 git clone https://github.com/ibrahimamam1/memcpp
 cd memcpp
@@ -11,6 +23,7 @@ ninja install
 ```
 
 ## How To Use
+```c 
 #include<alloc.hpp>
 #include<alignment.hpp>
 
@@ -21,16 +34,11 @@ void* my_addr_aligned = mem_alloc_aligned(64, Alignment::Align16); //memory is 1
 //free memory
 mem_free(my_addr)
 mem_free(my_addr_aligned)
+``` 
 
 ### To compile
 ```bash
 g++ my_file.cpp -lmemcpp
 ```
 
-## Features
-- Manages process internal address space.
-- Requested Memory can be Byte Aligned.
-- Supports Large Allocations.
-- Coalesces freed memory to reduce internal fragmentation.
-- Lightweight and fast.
-- Intuitive API.
+
