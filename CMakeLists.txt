@@ -39,11 +39,9 @@ write_basic_package_version_file(
     COMPATIBILITY SameMajorVersion
 )
 
-configure_package_config_file(
-    "cmake/MemcppConfig.cmake.in"
-    "${CMAKE_CURRENT_BINARY_DIR}/memcppConfig.cmake"
-    INSTALL_DESTINATION lib/cmake/memcpp
-)
+file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/memcppConfig.cmake" "
+include(\"\${CMAKE_CURRENT_LIST_DIR}/MemcppTargets.cmake\")
+")
 
 install(
     FILES 
