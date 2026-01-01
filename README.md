@@ -12,14 +12,13 @@ lightweight c++ memory management library.
 ## How To Install
 ### Prerequisites
 - cmake
-- ninja
 
 ```bash
 git clone https://github.com/ibrahimamam1/memcpp
 cd memcpp
-cmake .
-cd build/
-ninja install
+mkdir build && cd build
+cmake ..
+sudo make install
 ```
 
 ## How To Use
