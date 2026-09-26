@@ -65,7 +65,7 @@ void* mem_alloc(size_t size){
     while(current != nullptr){
        if(current->free && current->size == size){
             //Found a suitable block
-            current->free = false;
+            current->free = false; 
             return (void*)(current + 1);
        }else if(current->free && current->size > size){
             size_t remaining_size = current->size - size;
@@ -142,4 +142,25 @@ void mem_free(void* ptr) {
         }
         current = current->next;
     }
+}
+
+Stats get_stats(){
+    Stats stats = {0, 0, 0, 0, 0, 0};
+    std::lock_guard<std::mutex> lock(alloc_mutex);
+    mem_block_t* current = head;
+    while(current != nullptr){
+        stats.total_mem += current->size + MEM_BLOCK_SIZE;
+        if(current->free){  
+            stats.num_blocks_free++;
+            stats.mem_size_free += current->size;
+            if(current->size > stats.largest_free_block){
+                stats.largest_free_block = current->size;
+            }
+        }else{
+            stats.n_blocks_allocated++;
+            stats.mem_size_allocated += current->size;
+        }
+        current = current->next;
+    }
+    return stats;
 }

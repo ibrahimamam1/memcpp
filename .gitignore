@@ -41,3 +41,9 @@
 *.dwo
 
 build/
+
+# Local tool state
+.freebuff/
+
+# Stray build artifacts
+exp
