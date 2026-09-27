@@ -10,6 +10,7 @@
 #define STARTING_SIZE INITIAL_BLOCK_SIZE+MEM_BLOCK_SIZE
 
 mem_block_t* head = nullptr;
+mem_block_t* last_allocated = nullptr; //necessary for next fit allocation
 std::mutex alloc_mutex;
 
 void init_mem_pool() {
@@ -55,6 +56,9 @@ void* mem_alloc_align_type(size_t size, AlignmentForType type_alignment){
 }
 
 void* mem_alloc(size_t size){
+    return mem_alloc_first_fit(size);
+}
+void* mem_alloc_first_fit(size_t size){
     std::lock_guard<std::mutex> lock(alloc_mutex);
     
     if(head == nullptr) {
@@ -65,13 +69,15 @@ void* mem_alloc(size_t size){
     while(current != nullptr){
        if(current->free && current->size == size){
             //Found a suitable block
-            current->free = false; 
+            current->free = false;
+            last_allocated = current; 
             return (void*)(current + 1);
        }else if(current->free && current->size > size){
             size_t remaining_size = current->size - size;
             if(remaining_size <= MEM_BLOCK_SIZE){
                 //Not enough space to split, allocate entire block
                 current->free = false;
+                last_allocated = current;
                 return (void*)(current + 1);
             }
 
@@ -87,6 +93,7 @@ void* mem_alloc(size_t size){
             current->size = size;
             current->is_aligned = false;
             current->next = new_block;
+            last_allocated = current;
             return (void*)(current + 1); 
        }
        prev = current; 
@@ -109,6 +116,7 @@ void* mem_alloc(size_t size){
     } else {
         head = new_block;  // This would be the first block
     }
+    last_allocated = new_block;
     return (void*)(new_block + 1);
 }
 
@@ -140,6 +148,7 @@ void* mem_alloc_best_fit(size_t size){
         size_t remaining_size = best->size - size;
         if(remaining_size <= MEM_BLOCK_SIZE){ //too small to split
             best->free = false;
+            last_allocated = best;
             return (void*)(best + 1);
         }
         //large enough to split
@@ -153,6 +162,7 @@ void* mem_alloc_best_fit(size_t size){
         best->size = size;
         best->is_aligned = false;
         best->next = new_block;
+        last_allocated = best;
         return (void*)(best + 1);
     }
 
@@ -171,6 +181,68 @@ void* mem_alloc_best_fit(size_t size){
     } else {
         head = new_block;
     }
+    last_allocated = new_block;
+    return (void*)(new_block + 1);
+}
+
+void* mem_alloc_next_fit(size_t size){
+    std::lock_guard<std::mutex> lock(alloc_mutex);
+
+    if(head == nullptr) {
+        init_mem_pool();
+    }
+
+    mem_block_t* start = (last_allocated != nullptr && last_allocated->next != nullptr)
+                            ? last_allocated->next : head;
+    mem_block_t* current = start;
+    mem_block_t* tail = nullptr;
+
+    do {
+        if(current->free && current->size == size){
+            current->free = false;
+            last_allocated = current;
+            return (void*)(current + 1);
+        } else if(current->free && current->size > size){
+            size_t remaining_size = current->size - size;
+            if(remaining_size <= MEM_BLOCK_SIZE){
+                current->free = false;
+                last_allocated = current;
+                return (void*)(current + 1);
+            }
+            mem_block_t* new_block = (mem_block_t*)((char*)(current + 1) + size);
+            new_block->free = true;
+            new_block->size = current->size - size - MEM_BLOCK_SIZE;
+            new_block->is_aligned = false;
+            new_block->next = current->next;
+
+            current->free = false;
+            current->size = size;
+            current->is_aligned = false;
+            current->next = new_block;
+            last_allocated = current;
+            return (void*)(current + 1);
+        }
+
+        if(current->next == nullptr) tail = current;
+        current = (current->next == nullptr) ? head : current->next;
+    } while(current != start);
+
+    if(tail == nullptr){
+        tail = head;
+        while(tail->next != nullptr) tail = tail->next;
+    }
+
+    mem_block_t* new_block = (mem_block_t*) sbrk(size + MEM_BLOCK_SIZE);
+    if(new_block == (void*) -1) {
+        return nullptr;
+    }
+    new_block->size = size;
+    new_block->free = false;
+    new_block->is_aligned = false;
+    new_block->next = nullptr;
+
+    tail->next = new_block;
+    last_allocated = new_block;
     return (void*)(new_block + 1);
 }
 
@@ -188,15 +260,27 @@ void mem_free(void* ptr) {
     }
     block->free = true;
 
-    //Coalesce adjacent free blocks
+    //Coalesce with next block if it's free
     if(block->next != nullptr && block->next->free) {
+        //block->next is about to be absorbed and vanish from the list;
+        //if the cursor pointed at it, move the cursor back to the survivor
+        if(last_allocated == block->next) {
+            last_allocated = block;
+        }
         block->size += MEM_BLOCK_SIZE + block->next->size;
         block->next = block->next->next;
     }
+
+    //Coalesce with previous block if it's free
     mem_block_t* current = head;
     while(current->next != nullptr) {
         if(current->next == block){
             if(current->free) {
+                //block is about to be absorbed and vanish from the list;
+                //if the cursor pointed at it, move the cursor back to the survivor
+                if(last_allocated == block) {
+                    last_allocated = current;
+                }
                 current->size += MEM_BLOCK_SIZE + block->size;
                 current->next = block->next;
             }
@@ -205,7 +289,6 @@ void mem_free(void* ptr) {
         current = current->next;
     }
 }
-
 Stats get_stats(){
     Stats stats = {0, 0, 0, 0, 0, 0};
     std::lock_guard<std::mutex> lock(alloc_mutex);

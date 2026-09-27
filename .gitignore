@@ -47,3 +47,4 @@ build/
 
 # Stray build artifacts
 exp
+bench/data
