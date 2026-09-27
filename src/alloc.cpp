@@ -112,6 +112,68 @@ void* mem_alloc(size_t size){
     return (void*)(new_block + 1);
 }
 
+void* mem_alloc_best_fit(size_t size){
+    std::lock_guard<std::mutex> lock(alloc_mutex);
+
+    if(head == nullptr) {
+        init_mem_pool();
+    }
+
+    mem_block_t* current = head;
+    mem_block_t* prev = nullptr;
+    mem_block_t* best = nullptr;
+    mem_block_t* best_prev = nullptr;
+
+    while(current != nullptr){
+        if(current->free && current->size >= size){
+            if(best == nullptr || current->size < best->size){
+                best = current;
+                best_prev = prev;
+            }
+        }
+        prev = current;
+        current = current->next;
+    }
+
+    if(best != nullptr){
+        //found a suitable block, split it to match request size.
+        size_t remaining_size = best->size - size;
+        if(remaining_size <= MEM_BLOCK_SIZE){ //too small to split
+            best->free = false;
+            return (void*)(best + 1);
+        }
+        //large enough to split
+        mem_block_t* new_block = (mem_block_t*)((char*)(best + 1) + size);
+        new_block->free = true;
+        new_block->size = best->size - size - MEM_BLOCK_SIZE;
+        new_block->is_aligned = false;
+        new_block->next = best->next;
+
+        best->free = false;
+        best->size = size;
+        best->is_aligned = false;
+        best->next = new_block;
+        return (void*)(best + 1);
+    }
+
+    // No suitable block found, request more memory
+    mem_block_t* new_block = (mem_block_t*) sbrk(size + MEM_BLOCK_SIZE);
+    if(new_block == (void*) -1) {
+        return nullptr;
+    }
+    new_block->size = size;
+    new_block->free = false;
+    new_block->is_aligned = false;
+    new_block->next = nullptr;
+
+    if (prev != nullptr) {
+        prev->next = new_block;
+    } else {
+        head = new_block;
+    }
+    return (void*)(new_block + 1);
+}
+
 void mem_free(void* ptr) {
     std::lock_guard<std::mutex> lock(alloc_mutex);
     if(ptr == nullptr) return;
