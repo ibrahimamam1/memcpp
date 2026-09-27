@@ -40,6 +40,8 @@ class AllocLatencySuccesiveExperiment {
         
         run("malloc", csv_file, malloc, free);
         run("first_fit", csv_file, mem_alloc, mem_free);
+        run("best_fit", csv_file, mem_alloc_best_fit, mem_free);
+        run("next_fit", csv_file, mem_alloc_next_fit, mem_free);
         csv_file.close();
     }
     

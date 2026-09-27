@@ -11,6 +11,9 @@ typedef struct Stats {
 } Stats;
 
 void* mem_alloc(size_t size);
+void* mem_alloc_first_fit(size_t size);
+void* mem_alloc_best_fit(size_t size);
+void* mem_alloc_next_fit(size_t size);
 void* mem_alloc_align(size_t size, Alignment alignment);
 void* mem_alloc_align_type(size_t size, AlignmentForType type_alignment);
 void mem_free(void* ptr);
