@@ -15,7 +15,7 @@ class FreeLatencyExperiment {
     public:
     void run(std::string subject, std::ofstream& csv_file, std::function<void*(size_t)> alloc, std::function<void(void*)> free_fn) {
         for (const auto& request_size: request_sizes) {
-                std::cout << subject << " with Request size: " << request_size << std::endl;
+                std::cout << "FREE LATENCY EXP: " << subject << " with Request size: " << request_size << std::endl;
                 size_t size = request_size;
                 
                 for (size_t i=0; i<num_requests; i++){
@@ -44,6 +44,9 @@ class FreeLatencyExperiment {
         
         run("malloc", csv_file, malloc, free);
         run("first_fit", csv_file, mem_alloc, mem_free);
+        run("best_fit", csv_file, mem_alloc_best_fit, mem_free);
+        run("next_fit", csv_file, mem_alloc_next_fit, mem_free);
+
         csv_file.close();
     }
     

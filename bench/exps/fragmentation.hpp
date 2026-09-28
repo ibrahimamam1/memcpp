@@ -31,6 +31,9 @@ class FragmentationExperiment {
             // Write to CSV
             csv_file << subject << "," << stats.total_mem << "," << stats.n_blocks_allocated << "," << stats.mem_size_allocated << "," << stats.mem_size_free << "," << stats.largest_free_block << std::endl;
         }
+        for(auto ptr: allocated_ptrs){
+            free_fn(ptr);
+        }
 
     }
 
@@ -43,6 +46,10 @@ class FragmentationExperiment {
         
         run("malloc", csv_file, malloc, free);
         run("first_fit", csv_file, mem_alloc, mem_free);
+        run("best_fit", csv_file, mem_alloc_best_fit, mem_free);
+        run("next_fit", csv_file, mem_alloc_next_fit, mem_free);
+
+
         csv_file.close();
     }
     

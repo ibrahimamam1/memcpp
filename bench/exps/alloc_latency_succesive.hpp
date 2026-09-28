@@ -7,7 +7,7 @@
 
 class AllocLatencySuccesiveExperiment {
     int request_sizes [1] = {-1}; // -1 means random size between 16 and 4096
-    size_t num_requests = 1000; // number of allocation requests of each size
+    size_t num_requests = 100; // number of allocation requests of each size
 
     std::string output_dir = "bench/data/";
     std::string exp_name = "alloc_latency_successive";
@@ -16,6 +16,7 @@ class AllocLatencySuccesiveExperiment {
     void run(std::string subject, std::ofstream& csv_file, std::function<void*(size_t)> alloc, std::function<void(void*)> free_fn) {
         std::vector<void*> allocated_ptrs;
         for (size_t i=0; i<num_requests; i++){
+            std::cout << "ALLOC LATENCY SUCCESSIVE EXP: " << subject << " " << i+1 << "/" << num_requests  << std::endl;
             size_t size = rand() % (4096 - 16 + 1) + 16; // random size between 16 and 4096
             const auto start_time{std::chrono::high_resolution_clock::now()};
             void* ptr = alloc(size);
@@ -42,6 +43,7 @@ class AllocLatencySuccesiveExperiment {
         run("first_fit", csv_file, mem_alloc, mem_free);
         run("best_fit", csv_file, mem_alloc_best_fit, mem_free);
         run("next_fit", csv_file, mem_alloc_next_fit, mem_free);
+        
         csv_file.close();
     }
     

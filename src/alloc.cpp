@@ -246,41 +246,34 @@ void* mem_alloc_next_fit(size_t size){
     return (void*)(new_block + 1);
 }
 
+static inline bool blocks_adjacent(const mem_block_t* a, const mem_block_t* b) {
+    return (const char*)(a + 1) + a->size == (const char*)b;
+}
+
 void mem_free(void* ptr) {
     std::lock_guard<std::mutex> lock(alloc_mutex);
     if(ptr == nullptr) return;
-    
+
     mem_block_t* block = (mem_block_t*)ptr - 1;
-    void* actual_ptr = ptr;
-    
     if(block->is_aligned) {
         void** back_ptr = reinterpret_cast<void**>(ptr) - 1;
-        actual_ptr = *back_ptr;
-        block = (mem_block_t*)actual_ptr - 1;
+        block = (mem_block_t*)(*back_ptr) - 1;
     }
     block->free = true;
 
-    //Coalesce with next block if it's free
-    if(block->next != nullptr && block->next->free) {
-        //block->next is about to be absorbed and vanish from the list;
-        //if the cursor pointed at it, move the cursor back to the survivor
-        if(last_allocated == block->next) {
-            last_allocated = block;
-        }
+    // Coalesce with next block only if free AND physically adjacent
+    if(block->next != nullptr && block->next->free && blocks_adjacent(block, block->next)) {
+        if(last_allocated == block->next) last_allocated = block;
         block->size += MEM_BLOCK_SIZE + block->next->size;
         block->next = block->next->next;
     }
 
-    //Coalesce with previous block if it's free
+    // Coalesce with previous block only if free AND physically adjacent
     mem_block_t* current = head;
     while(current->next != nullptr) {
-        if(current->next == block){
-            if(current->free) {
-                //block is about to be absorbed and vanish from the list;
-                //if the cursor pointed at it, move the cursor back to the survivor
-                if(last_allocated == block) {
-                    last_allocated = current;
-                }
+        if(current->next == block) {
+            if(current->free && blocks_adjacent(current, block)) {
+                if(last_allocated == block) last_allocated = current;
                 current->size += MEM_BLOCK_SIZE + block->size;
                 current->next = block->next;
             }
@@ -289,6 +282,7 @@ void mem_free(void* ptr) {
         current = current->next;
     }
 }
+
 Stats get_stats(){
     Stats stats = {0, 0, 0, 0, 0, 0};
     std::lock_guard<std::mutex> lock(alloc_mutex);
