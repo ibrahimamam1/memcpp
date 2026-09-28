@@ -8,13 +8,10 @@ int main() {
     FreeLatencyExperiment experiment2;
     AllocLatencySuccesiveExperiment experiment3;
     FragmentationExperiment experiment4;
-    std::cout << "Running Alloc Latency Experiment..." << std::endl;
     experiment1.run_experiment();
-    std::cout << "Running Free Latency Experiment..." << std::endl;
     experiment2.run_experiment();
-    std::cout << "Running Alloc Latency Successive Experiment..." << std::endl;
     experiment3.run_experiment();
-    std::cout << "Running Fragmentation Experiment..." << std::endl;
     experiment4.run_experiment();
+    std::cout << "Completed All Experiments\n";
     return 0;
 }

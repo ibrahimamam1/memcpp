@@ -7,7 +7,7 @@
 
 class AllocLatencySuccesiveExperiment {
     int request_sizes [1] = {-1}; // -1 means random size between 16 and 4096
-    size_t num_requests = 100; // number of allocation requests of each size
+    size_t num_requests = 1000; // number of allocation requests of each size
 
     std::string output_dir = "bench/data/";
     std::string exp_name = "alloc_latency_successive";
