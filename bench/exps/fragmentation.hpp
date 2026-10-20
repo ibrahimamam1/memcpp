@@ -43,7 +43,6 @@ class FragmentationExperiment {
         // Write CSV header
         csv_file << "subject,total_mem,n_blocks_allocated,mem_size_allocated,mem_size_free,largest_free_block" << std::endl;
         
-        run("malloc", csv_file, malloc, free);
         run("first_fit", csv_file, mem_alloc, mem_free);
         run("best_fit", csv_file, mem_alloc_best_fit, mem_free);
         run("next_fit", csv_file, mem_alloc_next_fit, mem_free);
