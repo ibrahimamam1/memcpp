@@ -171,31 +171,29 @@ Evaluated across 100,000 free operations per request size. `mem_free` performs b
 
 ---
 
-### 4. Memory Fragmentation & Metadata Overhead
+### 4. Memory Fragmentation
 
 Evaluates memory layout efficiency over 1,000 randomized allocation and deallocation operations with block sizes randomly chosen between 16 B and 4096 B.
 
-$$\text{External Fragmentation} = 1 - \frac{\text{largest\_free\_block}}{\text{mem\_size\_free}}$$
+$$\text{External Fragmentation} = 1 - \frac{\text{Largest Free Block}}{\text{Total Free Memory}}$$
 
-$$\text{Metadata Overhead} = \text{total\_mem} - \text{mem\_size\_allocated} - \text{mem\_size\_free} = (\text{total blocks}) \times \text{MEM\_BLOCK\_SIZE}$$
+Where the metrics correspond to fields in `Stats`:
+- **Largest Free Block**: `stats.largest_free_block`
+- **Total Free Memory**: `stats.mem_size_free`
 
-| Strategy | Peak Heap Footprint | Avg External Fragmentation | Max External Fragmentation | Peak Metadata Overhead |
-| :--- | :---: | :---: | :---: | :---: |
-| **First Fit** | **93.1 KB** | **35.15%** | **85.84%** | **1.63 KB** |
-| **Best Fit** | 132.4 KB | 37.18% | 88.56% | 2.24 KB |
-| **Next Fit** | 132.4 KB | 41.31% | 91.17% | 2.56 KB |
+| Strategy | Peak Heap Footprint | Avg External Fragmentation | Max External Fragmentation |
+| :--- | :---: | :---: | :---: |
+| **First Fit** | **93.1 KB** | **35.15%** | **85.84%** |
+| **Best Fit** | 132.4 KB | 37.18% | 88.56% |
+| **Next Fit** | 132.4 KB | 41.31% | 91.17% |
 
 <p align="center">
   <img src="bench/plots/external_fragmentation.png" alt="External Fragmentation vs Requests" width="85%" />
 </p>
 
-<p align="center">
-  <img src="bench/plots/internal_fragmentation.png" alt="Internal Fragmentation / Metadata Overhead vs Requests" width="85%" />
-</p>
-
 > **Key Takeaway:**
 > - **First Fit** is the most memory-efficient policy in this workload, achieving the smallest peak heap footprint (93.1 KB vs 132.4 KB) and lowest external fragmentation (35.15% average).
-> - **Best Fit** splits blocks more aggressively to minimize local slack, but produces small isolated fragments that increase block count and metadata overhead.
+> - **Best Fit** splits blocks to minimize local slack, but produces small isolated free fragments that contribute to higher external fragmentation (37.18% average).
 > - **Next Fit** distributes allocations across the entire heap, which leads to higher external fragmentation (41.31% average) in exchange for faster allocation throughput.
 
 ---

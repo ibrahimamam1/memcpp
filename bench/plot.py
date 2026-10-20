@@ -10,7 +10,7 @@ Plots the results of allocator benchmarks from CSV files:
 2) Successive allocation latency vs number of allocations:
    - Time-series progression curves
    - Summary percentile comparison (p50, p95, p99) across subjects
-3) Internal and external fragmentation plotted separately against request count.
+3) External fragmentation plotted against request count.
 """
 
 import os
@@ -384,12 +384,12 @@ def plot_successive_latency_percentiles(data_dir=None, output_dir=None, show=Fal
     return fig
 
 # =============================================================================
-# 4) Fragmentation Experiments: Internal & External (Separately)
+# 4) Fragmentation Experiment: External Fragmentation
 # =============================================================================
 
 def plot_external_fragmentation(data_dir=None, output_dir=None, show=False):
     """
-    Plots External Fragmentation vs Number of Requests separately.
+    Plots External Fragmentation vs Number of Requests.
     External Fragmentation = 1 - (largest_free_block / mem_size_free)
     """
     data_path, out_path = resolve_paths(data_dir, output_dir)
@@ -436,51 +436,6 @@ def plot_external_fragmentation(data_dir=None, output_dir=None, show=False):
     plt.close(fig)
     return fig
 
-def plot_internal_fragmentation(data_dir=None, output_dir=None, show=False):
-    """
-    Plots Internal Fragmentation (Metadata / Unusable Overhead) vs Number of Requests separately.
-    Internal Fragmentation (Bytes) = total_mem - mem_size_allocated - mem_size_free
-    """
-    data_path, out_path = resolve_paths(data_dir, output_dir)
-    csv_file = data_path / "fragmentation.csv"
-    out_file = out_path / "internal_fragmentation.png"
-
-    if not csv_file.exists():
-        print(f"Warning: {csv_file} not found. Skipping plot.")
-        return None
-
-    df = pd.read_csv(csv_file)
-
-    fig, ax = plt.subplots(figsize=(9, 5), dpi=150)
-
-    subjects = [s for s in ['first_fit', 'best_fit', 'next_fit'] if s in df['subject'].unique()]
-
-    for subject in subjects:
-        sub_df = df[df['subject'] == subject].copy().reset_index(drop=True)
-        sub_df['request_number'] = sub_df.index + 1
-
-        int_frag_bytes = sub_df['total_mem'] - sub_df['mem_size_allocated'] - sub_df['mem_size_free']
-
-        color = get_color(subject)
-        label = get_label(subject)
-
-        ax.plot(sub_df['request_number'], int_frag_bytes, 
-                linewidth=2, color=color, label=label)
-
-    ax.set_xlabel("Number of Requests", fontsize=12, fontweight='bold')
-    ax.set_ylabel("Internal Overhead (Bytes)", fontsize=12, fontweight='bold')
-    ax.set_title("Internal Fragmentation (Metadata Overhead) vs Number of Requests", fontsize=14, fontweight='bold', pad=12)
-    ax.grid(True, linestyle='--', alpha=0.6)
-    ax.legend(frameon=True, fontsize=10, loc='best')
-
-    plt.tight_layout()
-    fig.savefig(out_file, dpi=300)
-    print(f"Saved: {out_file}")
-    if show:
-        plt.show()
-    plt.close(fig)
-    return fig
-
 # =============================================================================
 # Master Runner
 # =============================================================================
@@ -500,7 +455,6 @@ def plot_all(data_dir=None, output_dir=None, show=False):
     
     # Fragmentation
     plot_external_fragmentation(data_dir, output_dir, show=show)
-    plot_internal_fragmentation(data_dir, output_dir, show=show)
     print("All plots generated successfully!")
 
 def main():
@@ -509,7 +463,7 @@ def main():
     parser.add_argument("--output-dir", default=None, help="Directory to save plot images (default: bench/plots)")
     parser.add_argument("--show", action="store_true", help="Display interactive plot windows")
     parser.add_argument("-e", "--experiment", 
-                        choices=["all", "alloc", "dealloc", "successive", "ext_frag", "int_frag", "frag", "percentiles", "p50", "p95", "p99"],
+                        choices=["all", "alloc", "dealloc", "successive", "ext_frag", "frag", "percentiles", "p50", "p95", "p99"],
                         default="all", help="Which experiment to plot (default: all)")
     args = parser.parse_args()
 
@@ -533,13 +487,8 @@ def main():
     elif args.experiment == "successive":
         plot_latency_successive(args.data_dir, args.output_dir, show=args.show)
         plot_successive_latency_percentiles(args.data_dir, args.output_dir, show=args.show)
-    elif args.experiment == "ext_frag":
+    elif args.experiment in ["ext_frag", "frag"]:
         plot_external_fragmentation(args.data_dir, args.output_dir, show=args.show)
-    elif args.experiment == "int_frag":
-        plot_internal_fragmentation(args.data_dir, args.output_dir, show=args.show)
-    elif args.experiment == "frag":
-        plot_external_fragmentation(args.data_dir, args.output_dir, show=args.show)
-        plot_internal_fragmentation(args.data_dir, args.output_dir, show=args.show)
 
 if __name__ == "__main__":
     main()
